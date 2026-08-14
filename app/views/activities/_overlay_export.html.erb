@@ -1,0 +1,204 @@
+<% polyline = activity_summary_polyline(activity) %>
+<% activity_data = {
+  id: activity["id"],
+  type: activity["type"].to_s,
+  distance: activity["distance"].to_f,
+  moving_time: activity["moving_time"].to_i,
+  elevation_gain: activity["total_elevation_gain"].to_f,
+  average_speed: activity["average_speed"].to_f,
+  average_heartrate: activity["average_heartrate"].to_f,
+  calories: activity["calories"].to_i
+}.to_json %>
+
+<%= ui_dialog do |dialog| %>
+  <% if polyline.present? %>
+    <%= dialog.trigger variant: :outline, size: :sm do %>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" x2="12" y1="15" y2="3"/>
+      </svg>
+      Export Overlay Graphic
+    <% end %>
+  <% else %>
+    <span class="group relative inline-flex">
+      <%= ui_button "Export Overlay Graphic", variant: :outline, size: :sm, disabled: true, aria: { disabled: true } do %>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        Export Overlay Graphic
+      <% end %>
+      <span class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-[220px] -translate-x-1/2 rounded-md bg-black px-2 py-1 text-center text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+        No GPS route data available for this activity.
+      </span>
+    </span>
+  <% end %>
+
+  <%= dialog.content class: "max-w-2xl max-h-[60vh] overflow-y-auto" do %>
+    <%= dialog.header do %>
+      <%= dialog.title "Export Overlay Graphic" %>
+      <%= dialog.description "Customize your transparent overlay and export it for social media." %>
+    <% end %>
+
+    <div
+      data-controller="overlay-generator"
+      data-overlay-generator-polyline-value="<%= polyline.to_s %>"
+      data-overlay-generator-activity-value="<%= activity_data %>"
+      data-overlay-generator-story-class="aspect-[9/16] max-w-[360px]"
+      data-overlay-generator-square-class="aspect-square max-w-[360px]"
+      class="space-y-6"
+    >
+      <%# Preview %>
+      <div class="flex justify-center rounded-lg border border-dashed bg-muted/30 p-4">
+        <div
+          data-overlay-generator-target="preview"
+          class="relative w-full overflow-hidden bg-transparent aspect-[9/16] max-w-[360px]"
+        >
+          <%# Route SVG %>
+          <svg
+            data-overlay-generator-target="svg"
+            xmlns="http://www.w3.org/2000/svg"
+            class="absolute inset-0 h-full w-full"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <path
+              data-overlay-generator-target="path"
+              fill="none"
+              stroke="#ffffff"
+              stroke-width="4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.5));"
+            />
+          </svg>
+
+          <%# Metrics pill %>
+          <div class="absolute bottom-6 left-4 right-4">
+            <div class="rounded-3xl border border-white/10 bg-black/75 p-5 text-white shadow-lg backdrop-blur-md">
+              <div class="grid grid-cols-3 gap-y-4 gap-x-2 text-center">
+                <%# Row 1 %>
+                <div data-overlay-generator-target="metric" data-metric="type">
+                  <div class="mb-1 inline-flex">
+                    <%= ui_badge activity["type"].to_s.titleize, variant: :outline, class: "border-white/30 text-white bg-white/10" %>
+                  </div>
+                </div>
+                <div data-overlay-generator-target="metric" data-metric="distance">
+                  <div class="text-lg font-bold leading-none"><%= format_distance(activity["distance"]) %></div>
+                  <div class="mt-1 text-[10px] uppercase tracking-wide text-white/70">Distance</div>
+                </div>
+                <div data-overlay-generator-target="metric" data-metric="moving_time">
+                  <div class="text-lg font-bold leading-none">
+                    <%= format("%d:%02d", activity["moving_time"].to_i / 3600, (activity["moving_time"].to_i % 3600) / 60) %>
+                  </div>
+                  <div class="mt-1 text-[10px] uppercase tracking-wide text-white/70">Time</div>
+                </div>
+
+                <%# Row 2 %>
+                <div data-overlay-generator-target="metric" data-metric="pace_or_speed">
+                  <div class="text-lg font-bold leading-none pace-or-speed-value">—</div>
+                  <div class="mt-1 text-[10px] uppercase tracking-wide text-white/70 pace-or-speed-label">Pace</div>
+                </div>
+                <div data-overlay-generator-target="metric" data-metric="elevation">
+                  <div class="text-lg font-bold leading-none"><%= format_elevation(activity["total_elevation_gain"]) %></div>
+                  <div class="mt-1 text-[10px] uppercase tracking-wide text-white/70">Elevation</div>
+                </div>
+                <% if activity["average_heartrate"].present? %>
+                  <div data-overlay-generator-target="metric" data-metric="heartrate">
+                    <div class="text-lg font-bold leading-none"><%= activity["average_heartrate"].to_f.round %> bpm</div>
+                    <div class="mt-1 text-[10px] uppercase tracking-wide text-white/70">Heart Rate</div>
+                  </div>
+                <% elsif activity["calories"].present? %>
+                  <div data-overlay-generator-target="metric" data-metric="calories">
+                    <div class="text-lg font-bold leading-none"><%= activity["calories"].to_i %></div>
+                    <div class="mt-1 text-[10px] uppercase tracking-wide text-white/70">Calories</div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Controls %>
+      <div class="grid gap-6 sm:grid-cols-2">
+        <%# Aspect ratio %>
+        <div class="space-y-3">
+          <label class="text-sm font-medium">Aspect Ratio</label>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              data-overlay-generator-target="aspectButton"
+              data-overlay-generator-aspect-ratio-param="story"
+              data-action="overlay-generator#setAspectRatio"
+              aria-pressed="true"
+              class="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors"
+            >
+              9:16 Story
+            </button>
+            <button
+              type="button"
+              data-overlay-generator-target="aspectButton"
+              data-overlay-generator-aspect-ratio-param="square"
+              data-action="overlay-generator#setAspectRatio"
+              aria-pressed="false"
+              class="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-medium text-muted-foreground transition-colors"
+            >
+              1:1 Square
+            </button>
+          </div>
+        </div>
+
+        <%# Metric toggles %>
+        <div class="space-y-3">
+          <label class="text-sm font-medium">Visible Metrics</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="type" class="rounded border-input">
+              Type
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="distance" class="rounded border-input">
+              Distance
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="moving_time" class="rounded border-input">
+              Time
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="pace_or_speed" class="rounded border-input">
+              Pace/Speed
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="elevation" class="rounded border-input">
+              Elevation
+            </label>
+            <% if activity["average_heartrate"].present? %>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="heartrate" class="rounded border-input">
+                Heart Rate
+              </label>
+            <% end %>
+            <% if activity["calories"].present? %>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked data-action="overlay-generator#toggleMetric" data-overlay-generator-metric-param="calories" class="rounded border-input">
+                Calories
+              </label>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# Status %>
+      <div data-overlay-generator-target="exportStatus" class="hidden min-h-[1.5rem] text-center text-sm"></div>
+
+      <%# Actions %>
+      <%= dialog.footer class: "gap-2" do %>
+        <%= dialog.close_button "Cancel", variant: :outline %>
+        <%= ui_button "Download PNG", variant: :default, data: { action: "overlay-generator#download" } %>
+        <%= ui_button "Copy to Clipboard", variant: :secondary, data: { action: "overlay-generator#copyToClipboard" } %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

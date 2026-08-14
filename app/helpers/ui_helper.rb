@@ -144,10 +144,68 @@ module UiHelper
     content_tag(:span, **options.merge(class: klass)) { avatar_initials(name) }
   end
 
+  def ui_dialog(**options, &block)
+    builder = UiDialogBuilder.new(self, options)
+    content = capture(builder, &block)
+    content_tag(:div, data: { controller: "dialog" }, class: "inline-block") { content }
+  end
+
   private
 
   def avatar_initials(name)
     return "?" if name.blank?
     name.split.map(&:first).first(2).join.upcase
+  end
+
+  class UiDialogBuilder
+    DIALOG_BASE = "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg".freeze
+
+    attr_reader :view, :dialog_id
+
+    def initialize(view, options = {})
+      @view = view
+      @dialog_id = options.delete(:id) || "dialog-#{SecureRandom.hex(4)}"
+      @options = options
+    end
+
+    def trigger(variant: :default, size: :default, **options, &block)
+      klass = options.delete(:class)
+      content = block ? view.capture(&block) : options.delete(:text)
+
+      view.ui_button(content, variant: variant, size: size, class: klass, data: { action: "dialog#open" }, aria: { haspopup: "dialog", controls: dialog_id }, **options)
+    end
+
+    def content(**options, &block)
+      dialog_classes = [ DIALOG_BASE, @options.delete(:class), options.delete(:class) ].compact.join(" ")
+      view.content_tag(:dialog, id: dialog_id, class: dialog_classes, data: { dialog_target: "dialog", action: "click->dialog#closeOnBackdrop" }, aria: { labelledby: "#{dialog_id}-title", describedby: "#{dialog_id}-description" }, **@options.merge(options)) do
+        view.capture(self, &block)
+      end
+    end
+
+    def header(**options, &block)
+      klass = [ "flex flex-col space-y-1.5 text-center sm:text-left", options.delete(:class) ].compact.join(" ")
+      view.content_tag(:div, **options.merge(class: klass), &block)
+    end
+
+    def title(text = nil, **options, &block)
+      klass = [ "text-lg font-semibold leading-none tracking-tight", options.delete(:class) ].compact.join(" ")
+      view.content_tag(:h2, **options.merge(class: klass, id: "#{dialog_id}-title")) { block ? view.capture(&block) : text }
+    end
+
+    def description(text = nil, **options, &block)
+      klass = [ "text-sm text-muted-foreground", options.delete(:class) ].compact.join(" ")
+      view.content_tag(:p, **options.merge(class: klass, id: "#{dialog_id}-description")) { block ? view.capture(&block) : text }
+    end
+
+    def footer(**options, &block)
+      klass = [ "flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2", options.delete(:class) ].compact.join(" ")
+      view.content_tag(:div, **options.merge(class: klass), &block)
+    end
+
+    def close_button(text = "Close", variant: :outline, size: :default, **options, &block)
+      content = block ? view.capture(&block) : text
+      klass = options.delete(:class)
+      view.ui_button(content, variant: variant, size: size, class: klass, data: { action: "dialog#close" }, **options)
+    end
   end
 end

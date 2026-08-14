@@ -1,114 +1,232 @@
 <% content_for :title, @activity["name"] %>
 
 <div class="space-y-6">
-  <%= ui_button "Back to activities", href: activities_path, variant: :ghost, size: :sm, class: "-ml-2 text-muted-foreground" do %>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m12 19-7-7 7-7"/>
-      <path d="M19 12H5"/>
-    </svg>
-    Back to activities
-  <% end %>
+  <%# Header %>
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="space-y-1">
+      <%= ui_button "Back to activities", href: activities_path, variant: :ghost, size: :sm, class: "-ml-2 text-muted-foreground" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+          <path d="m12 19-7-7 7-7"/>
+          <path d="M19 12H5"/>
+        </svg>
+        Back to activities
+      <% end %>
 
-  <%= ui_card do %>
-    <%= ui_card_header do %>
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="space-y-1.5">
-          <%= ui_card_title @activity["name"] %>
-          <%= ui_card_description "#{format_date(@activity["start_date_local"])} · #{@activity["type"].to_s.titleize}" %>
-        </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl"><%= @activity["name"] %></h1>
         <%= activity_type_badge(@activity["type"]) %>
       </div>
-    <% end %>
-  <% end %>
+      <p class="text-sm text-muted-foreground"><%= format_date(@activity["start_date_local"]) %></p>
+    </div>
 
-  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    <%= ui_card do %>
-      <%= ui_card_header do %>
-        <%= ui_card_description "Distance" %>
-        <%= ui_card_title class: "text-3xl" do %>
-          <%= format_distance(@activity["distance"]) %>
-        <% end %>
-      <% end %>
-    <% end %>
+    <%= render_overlay_export_button %>
+  </div>
 
-    <%= ui_card do %>
-      <%= ui_card_header do %>
-        <%= ui_card_description "Moving Time" %>
-        <%= ui_card_title class: "text-3xl" do %>
-          <%= format_duration(@activity["moving_time"]) %>
-        <% end %>
-      <% end %>
-    <% end %>
-
-    <%= ui_card do %>
-      <%= ui_card_header do %>
-        <%= ui_card_description "Elevation Gain" %>
-        <%= ui_card_title class: "text-3xl" do %>
-          <%= format_elevation(@activity["total_elevation_gain"]) %>
-        <% end %>
-      <% end %>
-    <% end %>
-
-    <%= ui_card do %>
-      <%= ui_card_header do %>
-        <%= ui_card_description "Average Speed" %>
-        <%= ui_card_title class: "text-3xl" do %>
-          <%= format_speed(@activity["average_speed"]) %>
-        <% end %>
-      <% end %>
-    <% end %>
-
-    <%= ui_card do %>
-      <%= ui_card_header do %>
-        <%= ui_card_description "Max Speed" %>
-        <%= ui_card_title class: "text-3xl" do %>
-          <%= format_speed(@activity["max_speed"]) %>
-        <% end %>
-      <% end %>
-    <% end %>
-
-    <% if @activity["average_heartrate"].present? %>
+  <%# Main grid %>
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <%# Left column: metrics & analysis %>
+    <div class="col-span-12 space-y-6 lg:col-span-7">
+      <%# Core performance grid %>
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Average Heart Rate" %>
-          <%= ui_card_title class: "text-3xl" do %>
-            <%= @activity["average_heartrate"].to_f.round %> bpm
+          <%= ui_card_title "Performance" %>
+          <%= ui_card_description "Core activity metrics" %>
+        <% end %>
+        <%= ui_card_content do %>
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <%# Distance %>
+            <%= metric_card(
+              label: "Distance",
+              value: format_distance(@activity["distance"]),
+              icon: "map-pin",
+              icon_class: "text-blue-600 bg-blue-100"
+            ) %>
+
+            <%# Moving Time %>
+            <%= metric_card(
+              label: "Moving Time",
+              value: format_duration_hms(@activity["moving_time"]),
+              icon: "timer",
+              icon_class: "text-amber-600 bg-amber-100"
+            ) %>
+
+            <%# Elapsed Time %>
+            <%= metric_card(
+              label: "Elapsed Time",
+              value: format_duration_hms(@activity["elapsed_time"]),
+              icon: "clock",
+              icon_class: "text-slate-600 bg-slate-100"
+            ) %>
+
+            <%# Avg Speed / Pace %>
+            <%= metric_card(
+              label: format_pace_or_speed_label(@activity),
+              value: format_pace_or_speed(@activity),
+              icon: "gauge",
+              icon_class: "text-violet-600 bg-violet-100"
+            ) %>
+
+            <%# Max Speed %>
+            <%= metric_card(
+              label: "Max Speed",
+              value: format_speed(@activity["max_speed"]),
+              icon: "flame",
+              icon_class: "text-rose-600 bg-rose-100"
+            ) %>
+
+            <%# Elevation Gain %>
+            <%= metric_card(
+              label: "Elevation Gain",
+              value: format_elevation(@activity["total_elevation_gain"]),
+              icon: "mountain",
+              icon_class: "text-emerald-600 bg-emerald-100"
+            ) %>
+          </div>
+        <% end %>
+      <% end %>
+
+      <%# Advanced metrics %>
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_title "Advanced Metrics" %>
+          <%= ui_card_description "Detailed analysis from Strava" %>
+        <% end %>
+        <%= ui_card_content class: "space-y-6" do %>
+          <%# Efficiency & rest %>
+          <div>
+            <h4 class="mb-3 text-sm font-semibold">Efficiency & Rest</h4>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <%= small_metric(label: "Rest Time", value: format_rest_time(@activity["elapsed_time"].to_i - @activity["moving_time"].to_i)) %>
+              <%= small_metric(label: "Active Ratio", value: format_efficiency_ratio(@activity["moving_time"], @activity["elapsed_time"])) %>
+            </div>
+          </div>
+
+          <% if @activity["average_watts"].present? || @activity["weighted_average_watts"].present? || @activity["kilojoules"].present? %>
+            <div>
+              <h4 class="mb-3 text-sm font-semibold">Power & Energy</h4>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <%= small_metric(label: "Avg Power", value: format_watts(@activity["average_watts"])) %>
+                <%= small_metric(label: "Weighted Power", value: format_watts(@activity["weighted_average_watts"])) %>
+                <%= small_metric(label: "Work", value: format_kilojoules(@activity["kilojoules"])) %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @activity["average_cadence"].present? || @activity["max_cadence"].present? %>
+            <div>
+              <h4 class="mb-3 text-sm font-semibold">Cadence</h4>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <%= small_metric(label: "Avg Cadence", value: format_cadence(@activity["average_cadence"])) %>
+                <%= small_metric(label: "Max Cadence", value: format_cadence(@activity["max_cadence"])) %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @activity["elev_low"].present? || @activity["elev_high"].present? %>
+            <div>
+              <h4 class="mb-3 text-sm font-semibold">Elevation Extremes</h4>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <%= small_metric(label: "Elevation Range", value: format_elevation_range(@activity["elev_low"], @activity["elev_high"])) %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @activity["max_heartrate"].present? || @activity["suffer_score"].present? %>
+            <div>
+              <h4 class="mb-3 text-sm font-semibold">Heart Rate & Exertion</h4>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <%= small_metric(label: "Max Heart Rate", value: @activity["max_heartrate"].present? ? "#{@activity["max_heartrate"].to_f.round} bpm" : "—") %>
+                <%= small_metric(label: "Suffer Score", value: format_suffer_score(@activity["suffer_score"])) %>
+              </div>
+            </div>
           <% end %>
         <% end %>
       <% end %>
-    <% end %>
+    </div>
 
-    <% if @activity["max_heartrate"].present? %>
-      <%= ui_card do %>
+    <%# Right column: map, media & metadata %>
+    <div class="col-span-12 space-y-6 lg:col-span-5">
+      <%# Route map %>
+      <% polyline = activity_summary_polyline(@activity) %>
+      <%= ui_card class: "overflow-hidden" do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Max Heart Rate" %>
-          <%= ui_card_title class: "text-3xl" do %>
-            <%= @activity["max_heartrate"].to_f.round %> bpm
+          <%= ui_card_title "Route" %>
+          <%= ui_card_description "Activity GPS trace" %>
+        <% end %>
+        <%= ui_card_content class: "p-0" do %>
+          <div
+            data-controller="route-map"
+            data-route-map-polyline-value="<%= polyline.to_s %>"
+            class="relative h-[350px] w-full bg-muted/30 sm:h-[400px]"
+          >
+            <% if polyline.present? %>
+              <svg
+                data-route-map-target="svg"
+                xmlns="http://www.w3.org/2000/svg"
+                class="absolute inset-0 h-full w-full"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <path
+                  data-route-map-target="path"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            <% else %>
+              <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
+                No route data available
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+
+      <%# Photos %>
+      <% photos = activity_photo_urls(@activity["photos"]) %>
+      <% if photos.any? || @activity["total_photo_count"].to_i.positive? %>
+        <%= ui_card do %>
+          <%= ui_card_header do %>
+            <div class="flex items-center justify-between">
+              <%= ui_card_title "Photos" %>
+              <%= ui_badge "#{@activity["total_photo_count"].to_i}", variant: :secondary %>
+            </div>
+            <%= ui_card_description "Images from this activity" %>
+          <% end %>
+          <%= ui_card_content do %>
+            <% if photos.any? %>
+              <div class="grid grid-cols-2 gap-2">
+                <% photos.each do |url| %>
+                  <div class="overflow-hidden rounded-md">
+                    <%= image_tag url, alt: "Activity photo", class: "aspect-square w-full object-cover transition-transform hover:scale-105" %>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="rounded-md border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                Photos exist on Strava but are not available in this preview.
+              </div>
+            <% end %>
           <% end %>
         <% end %>
       <% end %>
-    <% end %>
 
-    <% if @activity["calories"].present? %>
+      <%# Metadata %>
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Calories" %>
-          <%= ui_card_title class: "text-3xl" do %>
-            <%= @activity["calories"].to_i %>
-          <% end %>
+          <%= ui_card_title "Details" %>
+          <%= ui_card_description "Gear, device & achievements" %>
+        <% end %>
+        <%= ui_card_content class: "space-y-4" do %>
+          <%= metadata_row(icon: "bike", label: "Gear", value: format_gear_id(@activity["gear_id"])) %>
+          <%= metadata_row(icon: "smartphone", label: "Device", value: format_device_name(@activity["device_name"])) %>
+          <%= metadata_row(icon: "trophy", label: "PRs", value: format_pr_count(@activity["pr_count"])) %>
+          <%= metadata_row(icon: "medal", label: "Achievements", value: format_achievement_count(@activity["achievement_count"])) %>
+          <%= metadata_row(icon: "thermometer", label: "Temperature", value: format_temperature(@activity["average_temp"])) %>
         <% end %>
       <% end %>
-    <% end %>
-
-    <% if @activity["elapsed_time"].present? %>
-      <%= ui_card do %>
-        <%= ui_card_header do %>
-          <%= ui_card_description "Elapsed Time" %>
-          <%= ui_card_title class: "text-3xl" do %>
-            <%= format_duration(@activity["elapsed_time"]) %>
-          <% end %>
-        <% end %>
-      <% end %>
-    <% end %>
+    </div>
   </div>
 </div>
