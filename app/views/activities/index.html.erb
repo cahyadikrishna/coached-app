@@ -94,13 +94,13 @@
           <% daily_distances = @recent_activities.group_by { |a| Date.parse(a["start_date_local"]) }.transform_values { |acts| acts.sum { |a| a["distance"].to_f } / 1000.0 } %>
           <% last_7_days = (Date.current - 6..Date.current).to_a %>
           <% max_distance = [daily_distances.values.max.to_f, 1].max %>
-          <div class="flex h-64 items-end justify-between gap-2 rounded-md border bg-muted/30 p-4">
+          <div class="grid h-64 grid-cols-7 gap-2 rounded-md border bg-muted/30 p-4">
             <% last_7_days.each do |date| %>
               <% distance = daily_distances.fetch(date, 0.0) %>
               <% bar_height = distance.positive? ? [(distance / max_distance * 100).round, 8].max : 4 %>
-              <div class="flex flex-1 flex-col items-center gap-2">
+              <div class="flex h-full flex-col items-center justify-end gap-2">
                 <div class="w-full max-w-[40px] rounded-t bg-blue-500 transition-all hover:bg-blue-600" style="height: <%= bar_height %>%;"></div>
-                <span class="text-xs font-medium text-muted-foreground"><%= date.strftime("%a") %></span>
+                <span class="text-xs font-medium text-muted-foreground"><%= date.strftime("%b %d") %></span>
                 <span class="text-xs font-semibold"><%= number_with_precision(distance, precision: 1) %> km</span>
               </div>
             <% end %>
@@ -108,19 +108,58 @@
         <% end %>
       <% end %>
 
-      <%# Right: Recent Activity Types %>
+      <%# Right: Latest Activity %>
+      <% latest_activity = @recent_activities.first %>
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_title "Recent Activity Types" %>
-          <%= ui_card_description "Sports you trained in this week" %>
-        <% end %>
-        <%= ui_card_content do %>
-          <div class="flex flex-wrap gap-2">
-            <% @recent_activities.map { |a| a["type"] }.uniq.each do |activity_type| %>
-              <% variant = case activity_type when "Run" then :default when "Ride" then :secondary else :outline end %>
-              <%= ui_badge activity_type.to_s.titleize, variant: variant %>
-            <% end %>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="space-y-1">
+              <%= ui_card_title "Latest Activity" %>
+              <%= ui_card_description format_date(latest_activity["start_date_local"]) %>
+            </div>
+            <% latest_badge_variant = case latest_activity["type"] when "Ride" then :default when "Run" then :secondary else :outline end %>
+            <%= ui_badge latest_activity["type"].to_s.titleize, variant: latest_badge_variant %>
           </div>
+        <% end %>
+        <%= ui_card_content class: "space-y-4" do %>
+          <p class="font-semibold leading-tight"><%= latest_activity["name"] %></p>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <%= ui_card_description "Distance" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["distance"].present? ? format_distance(latest_activity["distance"]) : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Moving Time" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["moving_time"].present? ? format_duration(latest_activity["moving_time"]) : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Elevation" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["total_elevation_gain"].present? ? format_elevation(latest_activity["total_elevation_gain"]) : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Avg Speed" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["average_speed"].present? ? format_speed(latest_activity["average_speed"]) : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Max Speed" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["max_speed"].present? ? format_speed(latest_activity["max_speed"]) : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Avg Heart Rate" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["average_heartrate"].present? ? "#{latest_activity["average_heartrate"].to_f.round} bpm" : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Max Heart Rate" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["max_heartrate"].present? ? "#{latest_activity["max_heartrate"].to_f.round} bpm" : "—" %><% end %>
+            </div>
+            <div class="space-y-1">
+              <%= ui_card_description "Calories" %>
+              <%= ui_card_title class: "text-xl" do %><%= latest_activity["calories"].present? ? latest_activity["calories"].to_i : "—" %><% end %>
+            </div>
+          </div>
+
+          <%= ui_button "View details", href: activity_path(latest_activity["id"]), variant: :outline, size: :sm %>
         <% end %>
       <% end %>
     </div>

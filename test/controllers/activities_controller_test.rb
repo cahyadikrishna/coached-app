@@ -15,6 +15,11 @@ class ActivitiesControllerTest < ActionController::TestCase
         "distance" => 25_000.0,
         "moving_time" => 3600,
         "total_elevation_gain" => 150.0,
+        "average_speed" => 6.94,
+        "max_speed" => 12.5,
+        "average_heartrate" => 145.0,
+        "max_heartrate" => 175.0,
+        "calories" => 800,
         "start_date_local" => 1.day.ago.iso8601
       },
       {
@@ -33,6 +38,9 @@ class ActivitiesControllerTest < ActionController::TestCase
       assert_response :success
       assert_select "h1", /Welcome back, Ada Lovelace/
       assert_select ".text-3xl", /30\.00/
+      assert_select "p.font-semibold", /Morning Ride/
+      assert_select ".text-xl", /145 bpm/
+      assert_select "a[href=?]", activity_path(1), text: /View details/
     end
   end
 
