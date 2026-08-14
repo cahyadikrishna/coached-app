@@ -1,0 +1,19 @@
+<% content_for :title, "Sign in" %>
+
+<div class="flex min-h-[70vh] items-center justify-center">
+  <div class="w-full max-w-md">
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_title "Welcome to AI Coach" %>
+        <%= ui_card_description "Connect your Strava account to get weekly AI-powered coaching summaries of your training." %>
+      <% end %>
+
+      <%= ui_card_content class: "space-y-4" do %>
+        <%= ui_button "Connect with Strava", href: StravaService.authorization_url, size: :lg, class: "w-full" %>
+        <p class="text-center text-xs text-muted-foreground">
+          You'll be redirected to Strava to authorize access to your activities.
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  strava_id: "1001"
+  access_token: token_one
+  refresh_token: refresh_one
+  token_expires_at: <%= 1.hour.from_now.to_i %>
+  name: Ada Lovelace
+  avatar_url: https://example.com/ada.png
+
+two:
+  strava_id: "1002"
+  access_token: token_two
+  refresh_token: refresh_two
+  token_expires_at: <%= 1.hour.from_now.to_i %>
+  name: Grace Hopper
+  avatar_url: https://example.com/grace.png

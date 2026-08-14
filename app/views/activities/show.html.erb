@@ -1,0 +1,114 @@
+<% content_for :title, @activity["name"] %>
+
+<div class="space-y-6">
+  <%= ui_button "Back to activities", href: activities_path, variant: :ghost, size: :sm, class: "-ml-2 text-muted-foreground" do %>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m12 19-7-7 7-7"/>
+      <path d="M19 12H5"/>
+    </svg>
+    Back to activities
+  <% end %>
+
+  <%= ui_card do %>
+    <%= ui_card_header do %>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="space-y-1.5">
+          <%= ui_card_title @activity["name"] %>
+          <%= ui_card_description "#{format_date(@activity["start_date_local"])} · #{@activity["type"].to_s.titleize}" %>
+        </div>
+        <%= activity_type_badge(@activity["type"]) %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_description "Distance" %>
+        <%= ui_card_title class: "text-3xl" do %>
+          <%= format_distance(@activity["distance"]) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_description "Moving Time" %>
+        <%= ui_card_title class: "text-3xl" do %>
+          <%= format_duration(@activity["moving_time"]) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_description "Elevation Gain" %>
+        <%= ui_card_title class: "text-3xl" do %>
+          <%= format_elevation(@activity["total_elevation_gain"]) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_description "Average Speed" %>
+        <%= ui_card_title class: "text-3xl" do %>
+          <%= format_speed(@activity["average_speed"]) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_description "Max Speed" %>
+        <%= ui_card_title class: "text-3xl" do %>
+          <%= format_speed(@activity["max_speed"]) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if @activity["average_heartrate"].present? %>
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Average Heart Rate" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= @activity["average_heartrate"].to_f.round %> bpm
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if @activity["max_heartrate"].present? %>
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Max Heart Rate" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= @activity["max_heartrate"].to_f.round %> bpm
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if @activity["calories"].present? %>
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Calories" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= @activity["calories"].to_i %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if @activity["elapsed_time"].present? %>
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Elapsed Time" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= format_duration(@activity["elapsed_time"]) %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

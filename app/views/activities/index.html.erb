@@ -1,0 +1,105 @@
+<% content_for :title, "Activities" %>
+
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Recent Activities</h1>
+    <p class="text-sm text-muted-foreground">Your last 7 days of Strava activity.</p>
+  </div>
+
+  <% if @activities.any? %>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Total Activities" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= @stats[:total_activities] %>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Total Distance" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= format_distance(@stats[:total_distance]) %>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Total Moving Time" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= format_duration(@stats[:total_moving_time]) %>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_description "Total Elevation" %>
+          <%= ui_card_title class: "text-3xl" do %>
+            <%= format_elevation(@stats[:total_elevation]) %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @activities.empty? %>
+    <%= ui_alert do %>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" x2="12" y1="8" y2="12"/>
+        <line x1="12" x2="12.01" y1="16" y2="16"/>
+      </svg>
+      <%= ui_alert_title "No activities found" %>
+      <%= ui_alert_description "You haven't logged any Strava activities in the last 7 days." %>
+    <% end %>
+  <% else %>
+    <%= ui_card do %>
+      <%= ui_card_header do %>
+        <%= ui_card_title "Last 7 Days" %>
+        <%= ui_card_description "#{@activities.size} #{'activity'.pluralize(@activities.size)} logged" %>
+      <% end %>
+      <%= ui_card_content class: "p-0" do %>
+        <div class="overflow-x-auto">
+          <%= ui_table do %>
+            <%= ui_table_header do %>
+              <%= ui_table_row do %>
+                <%= ui_table_head "Date" %>
+                <%= ui_table_head "Activity" %>
+                <%= ui_table_head "Type" %>
+                <%= ui_table_head "Distance" %>
+                <%= ui_table_head "Moving Time" %>
+                <%= ui_table_head "Elevation" %>
+                <%= ui_table_head(class: "text-right") { "Details" } %>
+              <% end %>
+            <% end %>
+            <%= ui_table_body do %>
+              <% @activities.each do |activity| %>
+                <%= ui_table_row do %>
+                  <%= ui_table_cell class: "whitespace-nowrap text-muted-foreground" do %>
+                    <%= format_date(activity["start_date_local"]) %>
+                  <% end %>
+                  <%= ui_table_cell class: "font-medium" do %>
+                    <%= link_to activity["name"], activity_path(activity["id"]), class: "hover:underline" %>
+                  <% end %>
+                  <%= ui_table_cell do %>
+                    <%= activity_type_badge(activity["type"]) %>
+                  <% end %>
+                  <%= ui_table_cell { format_distance(activity["distance"]) } %>
+                  <%= ui_table_cell { format_duration(activity["moving_time"]) } %>
+                  <%= ui_table_cell { format_elevation(activity["total_elevation_gain"]) } %>
+                  <%= ui_table_cell class: "text-right" do %>
+                    <%= ui_button "View", href: activity_path(activity["id"]), variant: :ghost, size: :sm %>
+                  <% end %>
+                <% end %>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>
