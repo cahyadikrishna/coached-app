@@ -1,12 +1,14 @@
 class ActivitiesController < ApplicationController
   def index
-    @activities = StravaService.new(current_user).recent_activities(days: 7)
-    @stats = aggregate_stats(@activities)
+    @recent_activities = StravaService.new(current_user).recent_activities(days: 7)
+    @aggregated_metrics = aggregate_metrics(@recent_activities)
+    @latest_summary = current_user.weekly_summaries.order(created_at: :desc).first
   rescue Faraday::Error => e
     Rails.logger.error("Strava activities fetch failed: #{e.message}")
     flash.now[:alert] = "Unable to load your Strava activities. Please try again later."
-    @activities = []
-    @stats = aggregate_stats([])
+    @recent_activities = []
+    @aggregated_metrics = aggregate_metrics([])
+    @latest_summary = current_user.weekly_summaries.order(created_at: :desc).first
   end
 
   def show
@@ -18,12 +20,12 @@ class ActivitiesController < ApplicationController
 
   private
 
-  def aggregate_stats(activities)
+  def aggregate_metrics(activities)
     {
       total_activities: activities.size,
       total_distance: activities.sum { |a| a["distance"].to_f },
       total_moving_time: activities.sum { |a| a["moving_time"].to_i },
-      total_elevation: activities.sum { |a| a["total_elevation_gain"].to_f }
+      total_elevation_gain: activities.sum { |a| a["total_elevation_gain"].to_f }
     }
   end
 end

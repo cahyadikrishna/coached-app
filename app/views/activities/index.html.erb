@@ -1,66 +1,135 @@
-<% content_for :title, "Activities" %>
+<% content_for :title, "Home" %>
 
 <div class="space-y-6">
+  <%# Welcome header %>
   <div>
-    <h1 class="text-2xl font-semibold tracking-tight">Recent Activities</h1>
-    <p class="text-sm text-muted-foreground">Your last 7 days of Strava activity.</p>
+    <h1 class="text-3xl font-bold tracking-tight">Welcome back, <%= current_user.name || "Athlete" %></h1>
+    <p class="text-sm text-muted-foreground">Here is your AI coach assessment and training snapshot for the last 7 days.</p>
   </div>
 
-  <% if @activities.any? %>
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <%# 1. AI Coach Highlight %>
+  <%= ui_card class: "border-blue-200 bg-blue-50/50" do %>
+    <%= ui_card_header do %>
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-blue-600"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+        <%= ui_card_title "Weekly Coach's Assessment" %>
+      </div>
+      <%= ui_card_description "Powered by your AI coach" %>
+    <% end %>
+    <%= ui_card_content do %>
+      <div class="space-y-4">
+        <p class="text-base leading-relaxed text-foreground"><%= @latest_summary&.content.presence || "No weekly summary available yet. Generate one to get started." %></p>
+        <%= turbo_frame_tag "generate_summary" do %>
+          <%= ui_button "Generate New Summary", href: weekly_summaries_path, variant: :default, size: :sm, data: { turbo_method: :post } do %>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg>
+            Generate New Summary
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <% if @recent_activities.any? %>
+    <%# 2. Quick Stats / KPIs %>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Total Activities" %>
+          <div class="flex items-center justify-between">
+            <%= ui_card_description "Total Distance" %>
+            <div class="rounded-full bg-blue-100 p-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-blue-600"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.236v15"/><path d="M9 3.236v15"/></svg></div>
+          </div>
           <%= ui_card_title class: "text-3xl" do %>
-            <%= @stats[:total_activities] %>
+            <%= number_with_precision(@aggregated_metrics[:total_distance] / 1000.0, precision: 2) %><span class="text-sm font-normal text-muted-foreground"> km</span>
           <% end %>
         <% end %>
       <% end %>
 
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Total Distance" %>
+          <div class="flex items-center justify-between">
+            <%= ui_card_description "Moving Time" %>
+            <div class="rounded-full bg-amber-100 p-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-amber-600"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L5 4"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L19 20"/></svg></div>
+          </div>
           <%= ui_card_title class: "text-3xl" do %>
-            <%= format_distance(@stats[:total_distance]) %>
+            <% total_seconds = @aggregated_metrics[:total_moving_time] %>
+            <%= format("%d:%02d", total_seconds / 3600, (total_seconds % 3600) / 60) %><span class="text-sm font-normal text-muted-foreground"> hh:mm</span>
           <% end %>
         <% end %>
       <% end %>
 
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Total Moving Time" %>
+          <div class="flex items-center justify-between">
+            <%= ui_card_description "Elevation Gain" %>
+            <div class="rounded-full bg-emerald-100 p-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-600"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></div>
+          </div>
           <%= ui_card_title class: "text-3xl" do %>
-            <%= format_duration(@stats[:total_moving_time]) %>
+            <%= number_with_precision(@aggregated_metrics[:total_elevation_gain], precision: 0) %><span class="text-sm font-normal text-muted-foreground"> m</span>
           <% end %>
         <% end %>
       <% end %>
 
       <%= ui_card do %>
         <%= ui_card_header do %>
-          <%= ui_card_description "Total Elevation" %>
+          <div class="flex items-center justify-between">
+            <%= ui_card_description "Activities Logged" %>
+            <div class="rounded-full bg-violet-100 p-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-violet-600"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></div>
+          </div>
           <%= ui_card_title class: "text-3xl" do %>
-            <%= format_elevation(@stats[:total_elevation]) %>
+            <%= @aggregated_metrics[:total_activities] %>
           <% end %>
         <% end %>
       <% end %>
     </div>
-  <% end %>
 
-  <% if @activities.empty? %>
-    <%= ui_alert do %>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" x2="12" y1="8" y2="12"/>
-        <line x1="12" x2="12.01" y1="16" y2="16"/>
-      </svg>
-      <%= ui_alert_title "No activities found" %>
-      <%= ui_alert_description "You haven't logged any Strava activities in the last 7 days." %>
-    <% end %>
-  <% else %>
+    <%# 3. Main Content Split %>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <%# Left: Training Volume Chart %>
+      <%= ui_card class: "lg:col-span-2" do %>
+        <%= ui_card_header do %>
+          <%= ui_card_title "Training Volume" %>
+          <%= ui_card_description "Distance per day over the last 7 days" %>
+        <% end %>
+        <%= ui_card_content do %>
+          <% daily_distances = @recent_activities.group_by { |a| Date.parse(a["start_date_local"]) }.transform_values { |acts| acts.sum { |a| a["distance"].to_f } / 1000.0 } %>
+          <% last_7_days = (Date.current - 6..Date.current).to_a %>
+          <% max_distance = [daily_distances.values.max.to_f, 1].max %>
+          <div class="flex h-64 items-end justify-between gap-2 rounded-md border bg-muted/30 p-4">
+            <% last_7_days.each do |date| %>
+              <% distance = daily_distances.fetch(date, 0.0) %>
+              <% bar_height = distance.positive? ? [(distance / max_distance * 100).round, 8].max : 4 %>
+              <div class="flex flex-1 flex-col items-center gap-2">
+                <div class="w-full max-w-[40px] rounded-t bg-blue-500 transition-all hover:bg-blue-600" style="height: <%= bar_height %>%;"></div>
+                <span class="text-xs font-medium text-muted-foreground"><%= date.strftime("%a") %></span>
+                <span class="text-xs font-semibold"><%= number_with_precision(distance, precision: 1) %> km</span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+
+      <%# Right: Recent Activity Types %>
+      <%= ui_card do %>
+        <%= ui_card_header do %>
+          <%= ui_card_title "Recent Activity Types" %>
+          <%= ui_card_description "Sports you trained in this week" %>
+        <% end %>
+        <%= ui_card_content do %>
+          <div class="flex flex-wrap gap-2">
+            <% @recent_activities.map { |a| a["type"] }.uniq.each do |activity_type| %>
+              <% variant = case activity_type when "Run" then :default when "Ride" then :secondary else :outline end %>
+              <%= ui_badge activity_type.to_s.titleize, variant: variant %>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# 4. Recent Activities Table %>
     <%= ui_card do %>
       <%= ui_card_header do %>
-        <%= ui_card_title "Last 7 Days" %>
-        <%= ui_card_description "#{@activities.size} #{'activity'.pluralize(@activities.size)} logged" %>
+        <%= ui_card_title "Recent Activities" %>
+        <%= ui_card_description "Your latest Strava imports" %>
       <% end %>
       <%= ui_card_content class: "p-0" do %>
         <div class="overflow-x-auto">
@@ -68,38 +137,38 @@
             <%= ui_table_header do %>
               <%= ui_table_row do %>
                 <%= ui_table_head "Date" %>
-                <%= ui_table_head "Activity" %>
                 <%= ui_table_head "Type" %>
+                <%= ui_table_head "Title" %>
                 <%= ui_table_head "Distance" %>
-                <%= ui_table_head "Moving Time" %>
-                <%= ui_table_head "Elevation" %>
-                <%= ui_table_head(class: "text-right") { "Details" } %>
+                <%= ui_table_head "Time" %>
+                <%= ui_table_head(class: "text-right") { "Action" } %>
               <% end %>
             <% end %>
             <%= ui_table_body do %>
-              <% @activities.each do |activity| %>
+              <% @recent_activities.each do |activity| %>
+                <% badge_variant = case activity["type"] when "Ride" then :default when "Run" then :secondary else :outline end %>
+                <% moving_seconds = activity["moving_time"].to_i %>
                 <%= ui_table_row do %>
-                  <%= ui_table_cell class: "whitespace-nowrap text-muted-foreground" do %>
-                    <%= format_date(activity["start_date_local"]) %>
-                  <% end %>
-                  <%= ui_table_cell class: "font-medium" do %>
-                    <%= link_to activity["name"], activity_path(activity["id"]), class: "hover:underline" %>
-                  <% end %>
-                  <%= ui_table_cell do %>
-                    <%= activity_type_badge(activity["type"]) %>
-                  <% end %>
-                  <%= ui_table_cell { format_distance(activity["distance"]) } %>
-                  <%= ui_table_cell { format_duration(activity["moving_time"]) } %>
-                  <%= ui_table_cell { format_elevation(activity["total_elevation_gain"]) } %>
-                  <%= ui_table_cell class: "text-right" do %>
-                    <%= ui_button "View", href: activity_path(activity["id"]), variant: :ghost, size: :sm %>
-                  <% end %>
+                  <%= ui_table_cell class: "whitespace-nowrap text-muted-foreground" do %><%= format_date(activity["start_date_local"]) %><% end %>
+                  <%= ui_table_cell do %><%= ui_badge activity["type"].to_s.titleize, variant: badge_variant %><% end %>
+                  <%= ui_table_cell class: "font-medium" do %><%= activity["name"] %><% end %>
+                  <%= ui_table_cell do %><%= format_distance(activity["distance"]) %><% end %>
+                  <%= ui_table_cell do %><%= format("%d:%02d", moving_seconds / 3600, (moving_seconds % 3600) / 60) %><% end %>
+                  <%= ui_table_cell class: "text-right" do %><%= ui_button "View", href: activity_path(activity["id"]), variant: :ghost, size: :sm %><% end %>
                 <% end %>
               <% end %>
             <% end %>
           <% end %>
         </div>
       <% end %>
+    <% end %>
+  <% end %>
+
+  <% if @recent_activities.empty? %>
+    <%= ui_alert do %>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      <%= ui_alert_title "No activities found" %>
+      <%= ui_alert_description "You haven't logged any Strava activities in the last 7 days." %>
     <% end %>
   <% end %>
 </div>
